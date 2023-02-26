@@ -6,9 +6,11 @@ import 'package:flutter/src/rendering/sliver_grid.dart';
 import 'enums.dart';
 import 'methods.dart';
 
-void main() => runApp(MyApp());
+void main() => runApp(const MyApp());
 
 class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+
   // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
@@ -30,32 +32,17 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  int gridCount = 10;
-  List<Widget> gridChildren = [];
-  Direction currentDirection = Direction.down;
-  List<int> activeIndices = [300, 123, 100, 2];
+  List<int> activeIndices = List.generate(10, (index) => index);
+  Timer timer = Timer.periodic(const Duration(seconds: 1), (_) {});
 
-  @override
-  void initState() {
-    gridChildren = List.generate(
-        gridCount,
-        (index) => Container(
-              child: Text("sss"),
-              width: 20,
-              height: 20,
-              color: Colors.grey,
-            ));
-    super.initState();
-  }
-
-  int crossAxisCount = 35;
-  int itemsCount = 35 * 65; //65 row recommended
+  int crossAxisCount = 20;
+  int itemsCount = 34 * 20; //65 row recommended
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: Center(
-        child: Column(
+        child: Stack(
           children: [
             GridView.builder(
               shrinkWrap: true,
@@ -66,13 +53,45 @@ class _MyHomePageState extends State<MyHomePage> {
               itemBuilder: (context, index) {
                 return GestureDetector(
                   onTap: () {
-                    changeDirection(
-                        activeIndices: activeIndices,
+                    timer.cancel();
+                    Direction direction = getDirectionFromTapPosition(
+                        pressedIndex: index,
+                        itemsCount: itemsCount,
                         crossAxisCount: crossAxisCount,
                         headIndex: activeIndices.last,
-                        pressedIndex: index,
-                        itemsCount: itemsCount);
-                    setState(() {});
+                        activeIndices: activeIndices);
+                    timer = Timer.periodic(const Duration(milliseconds: 100),
+                        (timer) {
+                      changeDirection(
+                          direction: direction,
+                          activeIndices: activeIndices,
+                          crossAxisCount: crossAxisCount,
+                          headIndex: activeIndices.last,
+                          pressedIndex: index,
+                          itemsCount: itemsCount);
+                      bool didCollide = didReachEdge(
+                          direction: direction,
+                          crossAxisCount: crossAxisCount,
+                          activeIndices: activeIndices,
+                          itemCounts: itemsCount);
+                      didCollide
+                          ? activeIndices = [
+                              -9,
+                              -8,
+                              -7,
+                              -6,
+                              -5,
+                              -4,
+                              -3,
+                              -2,
+                              -1,
+                              0
+                            ]
+                          : null;
+                      setState(() {});
+                    });
+
+                    // setState(() {});
                   },
                   child: Container(
                     decoration: BoxDecoration(

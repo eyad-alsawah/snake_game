@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'enums.dart';
+import 'dart:math';
 
 void moveLeft(
     {required List<int> activeIndices,
@@ -12,11 +13,11 @@ void moveLeft(
     (activeIndices.isNotEmpty && activeIndices.length != 1)
         ? activeIndices.removeAt(0)
         : null;
-    didReachEdge(
-        direction: Direction.left,
-        crossAxisCount: crossAxisCount,
-        activeIndices: activeIndices,
-        itemCounts: itemsCount);
+    // didReachEdge(
+    //     direction: Direction.left,
+    //     crossAxisCount: crossAxisCount,
+    //     activeIndices: activeIndices,
+    //     itemCounts: itemsCount);
   }
 }
 
@@ -72,11 +73,11 @@ void moveUp(
     (activeIndices.isNotEmpty && activeIndices.length != 1)
         ? activeIndices.removeAt(0)
         : null;
-    didReachEdge(
-        direction: Direction.up,
-        crossAxisCount: crossAxisCount,
-        activeIndices: activeIndices,
-        itemCounts: itemsCount);
+    // didReachEdge(
+    //     direction: Direction.up,
+    //     crossAxisCount: crossAxisCount,
+    //     activeIndices: activeIndices,
+    //     itemCounts: itemsCount);
   }
 }
 
@@ -90,11 +91,11 @@ void moveDown(
     (activeIndices.isNotEmpty && activeIndices.length != 1)
         ? activeIndices.removeAt(0)
         : null;
-    didReachEdge(
-        direction: Direction.down,
-        crossAxisCount: crossAxisCount,
-        activeIndices: activeIndices,
-        itemCounts: itemsCount);
+    // didReachEdge(
+    //     direction: Direction.down,
+    //     crossAxisCount: crossAxisCount,
+    //     activeIndices: activeIndices,
+    //     itemCounts: itemsCount);
   }
 }
 
@@ -102,11 +103,11 @@ void moveRight(
     {required List<int> activeIndices,
     required int crossAxisCount,
     required int itemsCount}) {
-  didReachEdge(
-      direction: Direction.right,
-      crossAxisCount: crossAxisCount,
-      activeIndices: activeIndices,
-      itemCounts: itemsCount);
+  // didReachEdge(
+  //     direction: Direction.right,
+  //     crossAxisCount: crossAxisCount,
+  //     activeIndices: activeIndices,
+  //     itemCounts: itemsCount);
   int lastItem = activeIndices.isEmpty ? -1 : activeIndices.last;
   if (!activeIndices.contains(lastItem + 1)) {
     activeIndices.add(lastItem + 1);
@@ -121,15 +122,10 @@ void changeDirection(
     required int crossAxisCount,
     required int itemsCount,
     required int pressedIndex,
+    required Direction direction,
     required int headIndex}) {
-  Direction direction = getDirectionFromTapPosition(
-      pressedIndex: pressedIndex,
-      itemsCount: itemsCount,
-      crossAxisCount: crossAxisCount,
-      headIndex: headIndex,
-      activeIndices: activeIndices);
   //------------------------------
-  print("direction: $direction");
+  // print("direction: $direction");
   switch (direction) {
     case Direction.up:
       moveUp(
@@ -390,4 +386,22 @@ int getRowEndIndex({required int rowStart, required int crossAxisCount}) {
 int getSecondToLastItemIndex({required List<int> activeIndices}) {
   int secondToLastItem = activeIndices[activeIndices.length - 2];
   return secondToLastItem;
+}
+
+bool isNewDirectionTheOppositeOfThePrevious(
+    {required Direction newDirection, required Direction previousDirection}) {
+  if (newDirection == Direction.up && previousDirection == Direction.down) {
+    return true;
+  } else if (newDirection == Direction.down &&
+      previousDirection == Direction.up) {
+    return true;
+  } else if (newDirection == Direction.right &&
+      previousDirection == Direction.left) {
+    return true;
+  } else if (newDirection == Direction.left &&
+      previousDirection == Direction.right) {
+    return true;
+  } else {
+    return false;
+  }
 }

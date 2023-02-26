@@ -39,6 +39,7 @@ dependencies:
   dynamic_widget: ^4.0.5
   dcdg: ^4.1.0
 
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
