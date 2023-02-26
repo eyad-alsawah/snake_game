@@ -33,10 +33,18 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
   List<int> activeIndices = List.generate(10, (index) => index);
+  late List<int> foodList;
   Timer timer = Timer.periodic(const Duration(seconds: 1), (_) {});
 
   int crossAxisCount = 20;
   int itemsCount = 34 * 20; //65 row recommended
+
+  @override
+  void initState() {
+    foodList = spawnFood(itemsCount: itemsCount);
+    print("foodList: $foodList");
+    super.initState();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -60,7 +68,7 @@ class _MyHomePageState extends State<MyHomePage> {
                         crossAxisCount: crossAxisCount,
                         headIndex: activeIndices.last,
                         activeIndices: activeIndices);
-                    timer = Timer.periodic(const Duration(milliseconds: 100),
+                    timer = Timer.periodic(const Duration(milliseconds: 500),
                         (timer) {
                       changeDirection(
                           direction: direction,
@@ -74,6 +82,15 @@ class _MyHomePageState extends State<MyHomePage> {
                           crossAxisCount: crossAxisCount,
                           activeIndices: activeIndices,
                           itemCounts: itemsCount);
+                      spawnFood(itemsCount: itemsCount);
+                      didEatFood(
+                              activeIndices: activeIndices, foodList: foodList)
+                          ? {
+                              activeIndices.add(activeIndices.last),
+                              foodList.remove(activeIndices.last),
+                              setState(() {}),
+                            }
+                          : null;
                       didCollide
                           ? activeIndices = [
                               -9,
@@ -96,7 +113,9 @@ class _MyHomePageState extends State<MyHomePage> {
                   child: Container(
                     decoration: BoxDecoration(
                         color: getSnakeColor(
-                            activeIndices: activeIndices, index: index),
+                            foodList: foodList,
+                            activeIndices: activeIndices,
+                            index: index),
                         border: Border.all(
                             color: const Color(0xFF9FC304), width: 1)),
                     width: 10,

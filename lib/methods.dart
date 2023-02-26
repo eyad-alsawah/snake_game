@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:vibration/vibration.dart';
 
 import 'enums.dart';
 import 'dart:math';
@@ -50,13 +51,16 @@ void moveLeft(
 //  required int
 //  required int
 Color getSnakeColor({
+  required List<int> foodList,
   required int index,
   required List<int> activeIndices,
 }) {
   if (index == activeIndices.last) {
     return Colors.black87;
   }
-
+  if (foodList.contains(index)) {
+    return const Color(0xFF2F342A);
+  }
   return activeIndices.contains(index)
       ? const Color(0xFF2F342A)
       : const Color(0xFF8EB605);
@@ -403,5 +407,27 @@ bool isNewDirectionTheOppositeOfThePrevious(
     return true;
   } else {
     return false;
+  }
+}
+
+List<int> spawnFood({required int itemsCount}) {
+  Random random = Random();
+  List<int> foodList = List.generate(
+    20,
+    (index) => random.nextInt(itemsCount - 1),
+  );
+  return foodList;
+}
+
+bool didEatFood(
+    {required List<int> activeIndices, required List<int> foodList}) {
+  bool didEatFood = foodList.contains(activeIndices.last);
+  didEatFood ? vibrate() : null;
+  return didEatFood;
+}
+
+Future<void> vibrate() async {
+  if (await Vibration.hasVibrator() ?? false) {
+    Vibration.vibrate();
   }
 }
