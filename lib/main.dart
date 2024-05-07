@@ -68,7 +68,7 @@ class _MyHomePageState extends State<MyHomePage> {
                         crossAxisCount: crossAxisCount,
                         headIndex: activeIndices.last,
                         activeIndices: activeIndices);
-                    timer = Timer.periodic(const Duration(milliseconds: 500),
+                    timer = Timer.periodic(const Duration(milliseconds: 50),
                         (timer) {
                       changeDirection(
                           direction: direction,

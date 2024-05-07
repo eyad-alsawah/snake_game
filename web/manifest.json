@@ -1,6 +1,6 @@
 {
-    "name": "navigator_learning",
-    "short_name": "navigator_learning",
+    "name": "snake_game",
+    "short_name": "snake_game",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",

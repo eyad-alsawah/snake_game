@@ -1,8 +1,8 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.example.navigator_learning">
+    package="com.example.snake_game">
     <uses-permission android:name="android.permission.VIBRATE"/>
    <application
-        android:label="navigator_learning"
+        android:label="snake_game"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity
