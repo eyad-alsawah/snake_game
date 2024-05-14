@@ -39,6 +39,7 @@ dependencies:
   dynamic_widget: ^4.0.5
   dcdg: ^4.1.0
   vibration: ^1.7.6
+  flutter_bloc: ^8.1.5
 
 
 dev_dependencies:
