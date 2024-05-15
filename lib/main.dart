@@ -10,11 +10,15 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Dynamic Widget',
+      title: 'Snake Game',
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
-      home: const GameView(),
+      home: GameView(
+        screenWidth: MediaQuery.sizeOf(context).width,
+        screenHeight: MediaQuery.sizeOf(context).height - 20,
+        numberOfSquaresHorizontally: 20,
+      ),
     );
   }
 }
