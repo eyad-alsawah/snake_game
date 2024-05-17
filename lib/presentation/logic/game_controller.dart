@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:snake_game/presentation/logic/periodic_timer.dart';
 import 'package:vibration/vibration.dart';
 
 import '../../core/enums.dart';
@@ -8,36 +9,9 @@ import 'dart:math';
 
 typedef UpdateView = void Function();
 
-class PeriodicTimer {
-  final Duration _duration;
-  Timer? _timer; // Change to Timer?
-  final StreamController<int> _tickController = StreamController<int>();
-
-  PeriodicTimer(this._duration);
-
-  Stream<int> get ticks => _tickController.stream;
-
-  bool get isActive => _timer?.isActive ?? false; // Use null-aware operator
-
-  void _handleTick(Timer timer) {
-    _tickController.add(timer.tick);
-  }
-
-  void start() {
-    if (_timer != null && _timer!.isActive) {
-      return; // Check for null and isActive
-    }
-    _timer = Timer.periodic(_duration, _handleTick);
-  }
-
-  void cancel() {
-    _timer?.cancel(); // Use null-aware operator
-    _tickController.close();
-  }
-}
-
 class GameController {
   final UpdateView updateView;
+  final Function redrawView;
   final int numberOfSquaresHorizontally;
   final int itemsCount;
   final int snakeLength;
@@ -48,17 +22,30 @@ class GameController {
   List<int> activeIndices = [];
   //-----------------------
   Direction currentDirection = Direction.down;
-  GameController(
-      {required this.updateView,
-      required int refreshRate,
-      required this.numberOfSquaresHorizontally,
-      required this.itemsCount,
-      required this.snakeLength,
-      required int foodCount}) {
+  GameController({
+    required this.updateView,
+    required this.redrawView,
+    required int refreshRate,
+    required this.numberOfSquaresHorizontally,
+    required this.itemsCount,
+    required this.snakeLength,
+  }) {
     periodicTimer = PeriodicTimer(Duration(milliseconds: 1000 ~/ refreshRate));
+    generateInitialSnake();
+    generateFoodList();
+  }
+
+  void generateInitialSnake() {
+    activeIndices.clear();
     activeIndices = List.generate(snakeLength, (index) => index);
-    foodList =
-        List.generate(foodCount, (index) => Random().nextInt(itemsCount));
+  }
+
+  void generateFoodList() {
+    foodList.clear();
+    // this ensures that the snake is always shorter than the num of squares horizontally by 2 (optional) squares so that we can always see the snake moving and the snake won't hit itself
+    int foodListLength = numberOfSquaresHorizontally - snakeLength - 2;
+    foodList = List.generate(foodListLength >= 0 ? foodListLength : 0,
+        (index) => Random().nextInt(itemsCount));
   }
 
   void handleInput(int index) {
@@ -71,18 +58,17 @@ class GameController {
     }
   }
 
+  void changeRefreshRate(int newRefreshRate) {
+    periodicTimer
+        .changeDuration(Duration(milliseconds: 1000 ~/ newRefreshRate));
+  }
+
   void _startGameLoop() {
     periodicTimer.start();
     periodicTimer.ticks.listen((tick) {
       // todo: refactor all these methods into one
       _move();
-      didReachEdge();
-      if (didHitSelf()) {
-        activeIndices.clear();
-        activeIndices = List.generate(snakeLength, (index) => index);
-      }
       didEatFood();
-
       updateView();
     });
   }
@@ -93,7 +79,15 @@ class GameController {
     required int itemsCount,
   }) {
     int lastItem = activeIndices.isEmpty ? -1 : activeIndices.last;
-    activeIndices.add(lastItem - crossAxisCount);
+    if (willReachEdge()) {
+      int numberOfSquaresVertically =
+          (itemsCount / numberOfSquaresHorizontally).round();
+      activeIndices.add(lastItem +
+          ((numberOfSquaresVertically - 1) * numberOfSquaresHorizontally));
+    } else {
+      activeIndices.add(lastItem - crossAxisCount);
+    }
+
     _maintainSnakeLength(activeIndices);
   }
 
@@ -103,7 +97,14 @@ class GameController {
     required int itemsCount,
   }) {
     int lastItem = activeIndices.isEmpty ? -1 : activeIndices.last;
-    activeIndices.add(lastItem + crossAxisCount);
+    if (willReachEdge()) {
+      int numberOfSquaresVertically =
+          (itemsCount / numberOfSquaresHorizontally).round();
+      activeIndices.add(lastItem -
+          ((numberOfSquaresVertically - 1) * numberOfSquaresHorizontally));
+    } else {
+      activeIndices.add(lastItem + crossAxisCount);
+    }
     _maintainSnakeLength(activeIndices);
   }
 
@@ -113,7 +114,12 @@ class GameController {
     required int itemsCount,
   }) {
     int lastItem = activeIndices.isEmpty ? -1 : activeIndices.last;
-    activeIndices.add(lastItem - 1);
+    if (willReachEdge()) {
+      activeIndices.add(lastItem + crossAxisCount - 1);
+    } else {
+      activeIndices.add(lastItem - 1);
+    }
+
     _maintainSnakeLength(activeIndices);
   }
 
@@ -123,7 +129,12 @@ class GameController {
     required int itemsCount,
   }) {
     int lastItem = activeIndices.isEmpty ? -1 : activeIndices.last;
-    activeIndices.add(lastItem + 1);
+    if (willReachEdge()) {
+      activeIndices.add(lastItem - numberOfSquaresHorizontally + 1);
+    } else {
+      activeIndices.add(lastItem + 1);
+    }
+
     _maintainSnakeLength(activeIndices);
   }
 
@@ -134,6 +145,38 @@ class GameController {
   }
 
   // input processing related-------------------------------------
+
+  void changeDirection(Direction direction) {
+    if (!periodicTimer.isActive) {
+      _startGameLoop();
+    }
+
+    // preventing moving to the opposite direction
+    switch (direction) {
+      case Direction.up:
+        if (currentDirection == Direction.down) {
+          return;
+        }
+        break;
+      case Direction.down:
+        if (currentDirection == Direction.up) {
+          return;
+        }
+        break;
+      case Direction.left:
+        if (currentDirection == Direction.right) {
+          return;
+        }
+        break;
+      case Direction.right:
+        if (currentDirection == Direction.left) {
+          return;
+        }
+        break;
+    }
+    currentDirection = direction;
+  }
+
   void _move() {
     switch (currentDirection) {
       case Direction.up:
@@ -163,6 +206,15 @@ class GameController {
       default:
         break;
     }
+  }
+
+  void resetGame() {
+    periodicTimer.cancel();
+    generateFoodList();
+    generateInitialSnake();
+    currentDirection = Direction.down;
+    // can't use updateView because it only handles activeIndices and does not rerender changes to the foodList
+    redrawView();
   }
 
   RowRelativePosition _getRowRelativePosition(
@@ -258,7 +310,6 @@ class GameController {
 
     if (isNewDirectionTheOppositeOfThePrevious(
         newDirection: newDirection, previousDirection: currentDirection)) {
-      print("returning $currentDirection");
       return currentDirection;
     } else {
       return newDirection;
@@ -320,36 +371,29 @@ class GameController {
         .contains(headIndex);
   }
 
-  bool didReachEdge() {
+  bool willReachEdge() {
     int lastItem = activeIndices.last;
     bool reachedEdge = false;
 
     // Check if the snake reached the right edge
     if (currentDirection == Direction.right &&
         (lastItem + 1) % numberOfSquaresHorizontally == 0) {
-      activeIndices.add(lastItem - numberOfSquaresHorizontally + 1);
       reachedEdge = true;
     }
     // Check if the snake reached the left edge
     else if (currentDirection == Direction.left &&
         lastItem % numberOfSquaresHorizontally == 0) {
-      activeIndices.add(lastItem + numberOfSquaresHorizontally - 1);
       reachedEdge = true;
     }
     // Check if the snake reached the bottom edge
-    else if (currentDirection == Direction.down && lastItem >= itemsCount) {
-      activeIndices.add(lastItem % numberOfSquaresHorizontally);
+    else if (currentDirection == Direction.down &&
+        (lastItem + numberOfSquaresHorizontally) > (itemsCount - 1)) {
       reachedEdge = true;
     }
     // Check if the snake reached the top edge
-    else if (currentDirection == Direction.up && lastItem < 0) {
-      activeIndices.add(lastItem + itemsCount - numberOfSquaresHorizontally);
+    else if (currentDirection == Direction.up &&
+        (lastItem - numberOfSquaresHorizontally) < 0) {
       reachedEdge = true;
-    }
-
-    if (reachedEdge) {
-      activeIndices
-          .removeAt(0); // Remove the tail to maintain the snake's length
     }
 
     return reachedEdge;
@@ -414,7 +458,9 @@ class GameController {
 
   bool didEatFood() {
     // true when the head index is the same as the
-    bool didEatFood = foodList.contains(activeIndices.last);
+    bool didEatFood = activeIndices.isNotEmpty
+        ? foodList.contains(activeIndices.last)
+        : false;
     if (didEatFood) {
       foodList.removeWhere((element) => element == activeIndices.last);
       activeIndices.insert(0, activeIndices.last);
@@ -427,7 +473,7 @@ class GameController {
   // Sound related -----------------------------------------------
   Future<void> vibrate() async {
     if (await Vibration.hasVibrator() ?? false) {
-      Vibration.vibrate(duration: 50);
+      Vibration.vibrate(duration: 25);
     }
   }
 
@@ -435,7 +481,7 @@ class GameController {
   Color getSnakeColor({
     required int index,
   }) {
-    if (index == activeIndices.last) {
+    if (activeIndices.isNotEmpty && index == activeIndices.last) {
       return Colors.black87;
     }
     if (foodList.contains(index) && !activeIndices.contains(index)) {
@@ -444,5 +490,38 @@ class GameController {
     return activeIndices.contains(index)
         ? const Color(0xFF2F342A)
         : const Color(0xFF8EB605);
+  }
+
+  //-------------for fun
+  void eatAllFood() {
+    // Start the game loop if it's not already running
+    if (!periodicTimer.isActive) {
+      _startGameLoop();
+    }
+
+    // Set the direction towards the food if foodList is not empty
+    if (foodList.isNotEmpty) {
+      final targetFood = foodList.first;
+      Direction newDirection = _getDirectionFromTapPosition(targetFood);
+
+      // Ensure that the new direction is not the opposite of the current direction
+      if (!isNewDirectionTheOppositeOfThePrevious(
+          newDirection: newDirection, previousDirection: currentDirection)) {
+        currentDirection = newDirection;
+      }
+    }
+
+    // Listen for ticks to continuously update the direction towards the food
+    periodicTimer.ticks.listen((tick) {
+      if (foodList.isNotEmpty) {
+        final nextTargetFood = foodList.first;
+        Direction nextDirection = _getDirectionFromTapPosition(nextTargetFood);
+
+        if (!isNewDirectionTheOppositeOfThePrevious(
+            newDirection: nextDirection, previousDirection: currentDirection)) {
+          currentDirection = nextDirection;
+        }
+      }
+    });
   }
 }
