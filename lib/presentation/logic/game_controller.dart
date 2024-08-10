@@ -58,6 +58,11 @@ class GameController {
     }
   }
 
+  double getCurrentRefreshRate() {
+    Duration duration = periodicTimer.getCurrentDuration();
+    return 1000 / duration.inMilliseconds;
+  }
+
   void changeRefreshRate(int newRefreshRate) {
     periodicTimer
         .changeDuration(Duration(milliseconds: 1000 ~/ newRefreshRate));

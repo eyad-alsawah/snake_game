@@ -42,4 +42,8 @@ class PeriodicTimer {
       _handleTick(); // Restart the ticking process with the new duration
     }
   }
+
+  Duration getCurrentDuration(){
+    return _duration;
+  }
 }

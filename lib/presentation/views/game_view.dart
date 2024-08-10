@@ -64,6 +64,7 @@ class _GameViewState extends State<GameView> {
       ),
       backgroundColor: const Color(0xFF9FC304),
       drawer: GameDrawer(
+        currentRefreshRate: gameController.getCurrentRefreshRate(),
         onEatAllFood: () => gameController.eatAllFood(),
         onResetGame: () => gameController.resetGame(),
         onChangeRefreshRate: (newValue) =>
@@ -127,10 +128,9 @@ class _GameViewState extends State<GameView> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               InkWell(
-                focusColor:   const Color(0xFF8EB605),
+                focusColor: const Color(0xFF8EB605),
                 onTap: () => gameController.changeDirection(Direction.left),
                 child: Ink(
-                
                   padding: EdgeInsets.all(5.w),
                   decoration: const BoxDecoration(
                     shape: BoxShape.circle,
